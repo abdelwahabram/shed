@@ -25,7 +25,7 @@ def updateCurrentPortalHead(ptr):
     currentShellHandle = open(f".shed/{currentPortal[5:-1]}", "w")
     currentShellHandle.write(f"{ptr}\n")
     currentShellHandle.close()
-def getParentHash():
+def getCurrentPortalHash():
     currentPortalHandle = open(".shed/CUR_PORTAL", "r")
     currentPortal = currentPortalHandle.readline()
     
@@ -132,62 +132,30 @@ class TreePath:
 
 
 def readTree(treeHash, parent = "", output = []):
-    treeHandle = open(f".shed/shells/{treeHash}", "rb")
-    treeContents = treeHandle.read()
-    decompressedTree = zlib.decompress(treeContents)
-    # print(hashlib.sha1().digest_size)
-    decompressedTree = decompressedTree.split(b"\x00", 1)[1]
+
+    with open(f".shed/shells/{treeHash}", "rb") as treeHandle:
+        treeContents = treeHandle.read()
+
+        decompressedTree = zlib.decompress(treeContents)
+        decompressedTree = decompressedTree.split(b"\x00", 1)[1]
     
     while decompressedTree:
         decompressedTree = decompressedTree.split(b" ", 1)
+
         mode = decompressedTree[0].decode()
+
         decompressedTree = decompressedTree[1].split(b"\x00", 1)
+
         fileName = decompressedTree[0].decode()
+
         hexValue = decompressedTree[1][:20].hex()
+
         decompressedTree = decompressedTree[1][20:]
-        print(decompressedTree)
-        print(mode, fileName, hexValue)
         if mode == "100644":
             output.append([mode, f"{parent}/{fileName}" if parent else f"{fileName}", hexValue])
         else:
             readTree(hexValue, f"{parent}/{fileName}" if parent else f"{fileName}", output)
     return
-    # # print(b"h\xbc\x17\xf9\xff!\x04\xa9\xd7\xb6wpX\xbbL4<\xa7&\t".hex())
-    # # print(decompressedTree[2][:20].hex())
-    # # print(decompressedTree[2][20:])
-    # # print(decompressedTree[-2][-26:-6])
-    # #\x00mode f\x00hash(40)mode fhashmode
-    # # mode = decompressedTree[1][-6:].decode()
-
-    # # if mode != "100644":
-    # #     mode = "40000"
-    # #     rest = decompressedTree[1][:-5]
-    # # else:
-    # #     rest = decompressedTree[1][:-6]
-    # # firstLine = decompressedTree[1].decode()
-    # # mode, fileName = firstLine.split()
-    # # hashValue = ""
-    # # print(mode, fileName)
-    # counter = 2
-    # # output = []
-    # while counter < len(decompressedTree):
-    #     hashValue = decompressedTree[counter][:20]
-    #     hexValue = hashValue.hex()
-    #     # print(hexValue)
-    #     if mode == "100644":
-    #         output.append([mode, f"{parent}/{fileName}" if parent else f"{fileName}", hexValue])
-    #     else:
-    #         readTree(hexValue, f"{parent}/{fileName}" if parent else f"{fileName}", output)
-    #     rest = decompressedTree[counter][20:].decode()
-    #     if rest:
-    #         mode, fileName = rest.split()
-    #     # mode = rest[:6]
-    #     # fileName = rest[7:]
-    #     counter += 1
-    #     # print(rest)
-    # # print(output)
-
-    # return [] # list of contents
 
 class UNDER_CONSTRUCTION_AREA_MAINTAINER:
     def __init__(self):
@@ -199,68 +167,34 @@ class UNDER_CONSTRUCTION_AREA_MAINTAINER:
         constructionAreaPath = Path(".shed/UNDER_CONSTRUCTION_AREA")
 
         if constructionAreaPath.is_file():
-            print(777777777777777777777777777777777777777777)
+            
             with open(".shed/UNDER_CONSTRUCTION_AREA", "r") as stored:
                 jsonObject = json.load(stored)
+
                 self.currentShell = jsonObject["currentShell"]
                 self.newShell = jsonObject["newShell"]
-            print(self.currentShell)
+            
             return 
 
 
-        
-        # create idx file
-        constructionArea = open(".shed/UNDER_CONSTRUCTION_AREA", "w+")
+        treeHash = getCurrentPortalHash()
 
-        # all of the work below there in case if idx file didn't exist other wise, we read the file
-        # update the dict with the content of current commit
-        # read the current portal
-        currentPortalHandle = open(".shed/CUR_PORTAL", "r")
-        currentPortal = currentPortalHandle.readline()
-        
-        # go to the current portal
-        currentShellHandle = open(f".shed/{currentPortal[5:-1]}", "r")
-        currentShell = currentShellHandle.readline()
-        # go the hash of the cur portal
-        # open the shell
-        currentShellContentHandle = open(f".shed/shells/{currentShell[:-1]}", "rb")
-        currentShellContent = currentShellContentHandle.read()
-        # unzip it
-        decompressedShell = zlib.decompress(currentShellContent).decode().splitlines()
-        # print(decompressedShell)
-        # git the tree hash
-        # lineCounter = 0
-        # while lineCounter < 2:
-        #     treeHash = decompressedShell.readline()
-        #     lineCounter += 1
-        treeHash = decompressedShell[0][-40:]
-        # print(treeHash)
-
-        # read the tree from the commit
         output = []
         readTree(treeHash, "", output)
-        print(output)
 
         # read the files from the tree and list them into currentShell
         for file in output:
             mode, fileName, fileHash = file
+
             self.currentShell[fileName] = {"hash": fileHash, "mode": mode}
+
             self.newShell[fileName] = {"hash": fileHash, "mode": mode, "status":"no change"}
-        print(self.currentShell)
-        print("newnewnew")
-        print(self.newShell)
-        # the last operation is recursive because the tree has sub trees
+
+
         jsonObject = {"currentShell": self.currentShell, "newShell": self.newShell}
         with open(".shed/UNDER_CONSTRUCTION_AREA", "w") as out:
             json.dump(jsonObject, out)
-
-        print(self.currentShell)
-
-        ## now what???? if the idx file doesn't exist we need to write it
-        ## if it exists we need to update it
-        pass
-        # if not area, initialize one
-        # if no repo build one
+        
 
     def addFile(self, fileName):
         # pass
@@ -364,7 +298,7 @@ class UNDER_CONSTRUCTION_AREA_MAINTAINER:
         treePath.traverse()
         treeHash = treePath.buildTree()[1]
         print(treeHash)
-        parentHash = getParentHash()
+        parentHash = getCurrentPortalHash()
         print(parentHash)
         # iterate the list and create a shell pointing to the root tree as a commit in git
         # now we have the tree hash, the parent tree hash
@@ -399,10 +333,3 @@ a.prepareArea()
 # a.addFile("source/init.py")
 
 # a.build("msg")
-
-# def readTree(treeHash, parent = ""):
-#     treeHandle = open(f".shed/{treeHash}", "rb")
-#     treeContents = treeHandle.read()
-#     decompressedTree = zlib.decompress(treeContents)
-#     print(decompressedTree)
-#     return [] # list of contents

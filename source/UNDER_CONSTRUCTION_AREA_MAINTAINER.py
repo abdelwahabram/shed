@@ -25,6 +25,8 @@ def updateCurrentPortalHead(ptr):
     currentShellHandle = open(f".shed/{currentPortal[5:-1]}", "w")
     currentShellHandle.write(f"{ptr}\n")
     currentShellHandle.close()
+
+
 def getCurrentPortalHash():
     currentPortalHandle = open(".shed/CUR_PORTAL", "r")
     currentPortal = currentPortalHandle.readline()
@@ -46,6 +48,7 @@ def getCurrentPortalHash():
     #     lineCounter += 1
     treeHash = decompressedShell[0][-40:]
     return treeHash
+
 
 def createCommitBlob(commitData):
     treeHash = commitData[0]
@@ -73,6 +76,43 @@ def createCommitBlob(commitData):
     
     updateCurrentPortalHead(fileName)
     pass
+
+
+def repositoryExists():
+    path = '.shed/'
+
+    if os.path.exists(path):
+        return True
+    
+    print(" no repo yet, initialize one??")
+    return False
+
+
+def readTree(treeHash, parent = "", output = []):
+
+    with open(f".shed/shells/{treeHash}", "rb") as treeHandle:
+        treeContents = treeHandle.read()
+
+        decompressedTree = zlib.decompress(treeContents)
+        decompressedTree = decompressedTree.split(b"\x00", 1)[1]
+    
+    while decompressedTree:
+        decompressedTree = decompressedTree.split(b" ", 1)
+
+        mode = decompressedTree[0].decode()
+
+        decompressedTree = decompressedTree[1].split(b"\x00", 1)
+
+        fileName = decompressedTree[0].decode()
+
+        hexValue = decompressedTree[1][:20].hex()
+
+        decompressedTree = decompressedTree[1][20:]
+        if mode == "100644":
+            output.append([mode, f"{parent}/{fileName}" if parent else f"{fileName}", hexValue])
+        else:
+            readTree(hexValue, f"{parent}/{fileName}" if parent else f"{fileName}", output)
+    return
 
 class User:
     def __init__(self):
@@ -131,39 +171,16 @@ class TreePath:
         return ["40000", fileName]
 
 
-def readTree(treeHash, parent = "", output = []):
-
-    with open(f".shed/shells/{treeHash}", "rb") as treeHandle:
-        treeContents = treeHandle.read()
-
-        decompressedTree = zlib.decompress(treeContents)
-        decompressedTree = decompressedTree.split(b"\x00", 1)[1]
-    
-    while decompressedTree:
-        decompressedTree = decompressedTree.split(b" ", 1)
-
-        mode = decompressedTree[0].decode()
-
-        decompressedTree = decompressedTree[1].split(b"\x00", 1)
-
-        fileName = decompressedTree[0].decode()
-
-        hexValue = decompressedTree[1][:20].hex()
-
-        decompressedTree = decompressedTree[1][20:]
-        if mode == "100644":
-            output.append([mode, f"{parent}/{fileName}" if parent else f"{fileName}", hexValue])
-        else:
-            readTree(hexValue, f"{parent}/{fileName}" if parent else f"{fileName}", output)
-    return
-
 class UNDER_CONSTRUCTION_AREA_MAINTAINER:
     def __init__(self):
         self.currentShell = {}
         self.newShell = {}
-        pass
+    
 
     def prepareArea(self):
+        if not repositoryExists():
+            return
+        
         constructionAreaPath = Path(".shed/UNDER_CONSTRUCTION_AREA")
 
         if constructionAreaPath.is_file():
@@ -197,77 +214,63 @@ class UNDER_CONSTRUCTION_AREA_MAINTAINER:
         
 
     def addFile(self, fileName):
-        # pass
-        # check if repo exisits
-        path = '.shed/'
-        if not os.path.exists(path):
-            print(" no repo yet, initialize one??")
+
+        if not repositoryExists():
             return
-
-        # check if file not ignored one
-
-        # check if file changed ==> compare the hash with the one in current and new shell
-        # hash the content to create object name
-        hash = ""
-        fileObject = open(fileName, "r")
-        content = fileObject.read()
+        
+        
+        with open(fileName, "r") as fileObject:
+            content = fileObject.read()
+        
         header = f"blob {len(content.encode('utf-8'))}\0"
-        shellName = header + content
-        print(shellName)
-        hashObj = hashlib.sha1(shellName.encode())
-        hashName = hashObj.hexdigest()
-        print(hashName)
+
+        blobContent = bytes(header + content, 'utf-8')
+
+        hashObj = hashlib.sha1(blobContent)
+        hexValue = hashObj.hexdigest()
+        
 
         if fileName not in self.newShell:
-            print("a")
-            self.newShell[fileName] = {"hash": hashName, "mode":100644, "status": "created"}
-            jsonObject = {"currentShell": self.currentShell, "newShell": self.newShell}
-            with open(".shed/UNDER_CONSTRUCTION_AREA", "w") as out:
-                json.dump(jsonObject, out)
+            
+            self.newShell[fileName] = {"hash": hexValue, "mode":100644, "status": "created"}
+            self.writeUnderConstructionArea()
+
+            print("file added successfully")
+
             return
 
         # if the same hash in newShell >>> keep it 
-        if hashName == self.newShell[fileName]["hash"]:
-            print("b")
+        if hexValue == self.newShell[fileName]["hash"]:
+            print("no changes detected")
             return
 
         # if it's the old value in currentShell >> > no change
         if fileName in self.currentShell:
-            print("c")
-            if hashName == self.currentShell[fileName]["hash"]:
-                self.newShell[fileName]["hash"] = hashName
+            
+            if hexValue == self.currentShell[fileName]["hash"]:
+
+                self.newShell[fileName]["hash"] = hexValue
                 self.newShell[fileName]["status"] = "no change"
 
-                jsonObject = {"currentShell": self.currentShell, "newShell": self.newShell}
-                with open(".shed/UNDER_CONSTRUCTION_AREA", "w") as out:
-                    json.dump(jsonObject, out)
+                self.writeUnderConstructionArea()
+                print("changes undone")
                 return
         
 
-        
-        print(45)
-        # otherwise add it to the new shell
-        self.newShell[fileName] = {"hash":hashName, "mode": 100644, "status": "modified"}
-        
-        jsonObject = {"currentShell": self.currentShell, "newShell": self.newShell}
-        with open(".shed/UNDER_CONSTRUCTION_AREA", "w") as out:
-            json.dump(jsonObject, out)
+        self.newShell[fileName] = {"hash":hexValue, "mode": 100644, "status": "modified"}
+        self.writeUnderConstructionArea()
 
 
-        
-
-        # zib the content and save the object
-        data = shellName.encode('utf-8')
-
-        compressed = zlib.compress(data)
-        path = Path(f'.shed/shells/{hashName}')
+        compressed = zlib.compress(blobContent)
+        path = Path(f'.shed/shells/{hexValue}')
         if path.is_file():
+            print("updates was tracked successfuly")
             return
         with open(path, "wb") as blob:
             blob.write(compressed)
-        # add the file name to the indext
-        #########update the under const area after that
+        print("updates was tracked successfuly")
     
+
     def build(self, message):
         # check if idx file exists
         path = Path(".shed/UNDER_CONSTRUCTION_AREA")
@@ -323,13 +326,19 @@ class UNDER_CONSTRUCTION_AREA_MAINTAINER:
         UnderConstructionPath = Path(".shed/UNDER_CONSTRUCTION_AREA")
         UnderConstructionPath.unlink()
         # update the currentPortal head
-        
+
+
+    def writeUnderConstructionArea(self):
+        jsonObject = {"currentShell": self.currentShell, "newShell": self.newShell}
+        with open(".shed/UNDER_CONSTRUCTION_AREA", "w") as out:
+            json.dump(jsonObject, out)
 
 
 
 a = UNDER_CONSTRUCTION_AREA_MAINTAINER()
+
 a.prepareArea()
-# a.add
-# a.addFile("source/init.py")
+
+a.addFile("source/init.py")
 
 # a.build("msg")

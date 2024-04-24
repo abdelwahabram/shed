@@ -144,13 +144,14 @@ class TreePath:
         self.leafs = {}
     
     def addPath(self, path, hash):
-        # path = path.split(sep="/")
         if not path:
             self.isBlob = True
             self.hash = hash
             return
+        
         if path[0] not in self.leafs:
             self.leafs[path[0]] = TreePath()
+
         return self.leafs[path[0]].addPath(path[1:], hash)
     
     def traverse(self):
@@ -161,30 +162,33 @@ class TreePath:
     def buildTree(self):
         if self.isBlob:
             return ["100644", self.hash]
-        treeContent = {}
-        for file, tree in self.leafs.items():
-            treeContent[file] = tree.buildTree()
+        
+        subTreeMetaData = {}
+        for treeName, treeObject in self.leafs.items():
+            subTreeMetaData[treeName] = treeObject.buildTree()
+        
         content =b""
-        for file, data in treeContent.items():
-            hash = bytes.fromhex(data[1])
-            # content += f"{data[0]} {file}\0{hash}"
-            startOfLine = f"{data[0]} {file}\0"
-            startOfLine = bytes(startOfLine, 'utf-8')
-            content+= startOfLine + hash
-        # print(content)
+        for treeName, treeData in subTreeMetaData.items():
+            mode, hexHash = treeData
+
+            hashValue = bytes.fromhex(hexHash)
+
+            line = bytes(f"{mode} {treeName}\0",'utf-8') + hashValue
+
+            content += line
+        
         header = bytes(f"tree {len(content)}\x00", 'utf-8')
-        # print(header)
-        treeObject = header + content
-        fileName = hashlib.sha1(treeObject)
-        fileName = fileName.hexdigest()
-        # print(f"{file}: {fileName}")
-        treeObject = treeObject
-        print(treeObject)
-        compressedObject = zlib.compress(treeObject)
-        # print(compressedObject)
-        with open(f".shed/shells/{fileName}", "wb") as blob:
+
+        treeBlobContent = header + content
+
+        treeBlobName = hashlib.sha1(treeBlobContent).hexdigest()
+
+        compressedObject = zlib.compress(treeBlobContent)
+        
+        with open(f".shed/shells/{treeBlobName}", "wb") as blob:
             blob.write(compressedObject)
-        return ["40000", fileName]
+        
+        return ["40000", treeBlobName]
 
 
 class UNDER_CONSTRUCTION_AREA_MAINTAINER:
@@ -356,5 +360,6 @@ a.prepareArea()
 
 a.addFile("source/init.py")
 print("############################################")
-
-a.build("msg2")
+a.addFile("source/hash.py")
+print("############################################")
+a.build("msg3")

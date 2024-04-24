@@ -25,24 +25,21 @@ def getTimeOffset():
 
 
 def updateCurrentPortalHead(ptr):
-    currentPortalHandle = open(".shed/CUR_PORTAL", "r")
-    
-    currentPortal = currentPortalHandle.readline()
 
-    currentShellHandle = open(f".shed/{currentPortal[5:-1]}", "w")
-    currentShellHandle.write(f"{ptr}\n")
-    currentShellHandle.close()
+    with open(".shed/CUR_PORTAL", "r") as currentPortalHandle:
+        currentPortal = currentPortalHandle.readline()
+
+    with open(f".shed/{currentPortal[5:-1]}", "w") as currentShellHandle:
+        currentShellHandle.write(f"{ptr}\n")
 
 
 def getCurrentShellHash():
 
-    currentPortalHandle = open(".shed/CUR_PORTAL", "r")
+    with open(".shed/CUR_PORTAL", "r") as currentPortalHandle:
+        currentPortal = currentPortalHandle.readline()
 
-    currentPortal = currentPortalHandle.readline()
-
-    currentShellHandle = open(f".shed/{currentPortal[5:-1]}", "r")
-
-    currentShell = currentShellHandle.readline()
+    with open(f".shed/{currentPortal[5:-1]}", "r") as currentShellHandle:
+        currentShell = currentShellHandle.readline()
 
     return currentShell[:-1]
 
@@ -51,9 +48,8 @@ def getCurrentPortalTreeHash():
 
     currentShellHash = getCurrentShellHash()
 
-    currentShellContentHandle = open(f".shed/shells/{currentShellHash}", "rb")
-
-    currentShellContent = currentShellContentHandle.read()
+    with open(f".shed/shells/{currentShellHash}", "rb") as currentShellContentHandle:
+        currentShellContent = currentShellContentHandle.read()
 
     decompressedShell = zlib.decompress(currentShellContent).decode().splitlines()
 

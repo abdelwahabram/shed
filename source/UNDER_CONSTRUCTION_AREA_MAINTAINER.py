@@ -4,22 +4,29 @@ from pathlib import Path
 import os.path, time, math
 
 def getTimeOffset():
-    # dddddddd
+    
     timeOffsetInSeconds = time.localtime().tm_gmtoff
+
     timeOffsetInHours = timeOffsetInSeconds / 3600
+
     westOfGMT = True if timeOffsetInHours < 0 else False
+
     timeOffsetInHours = abs(timeOffsetInHours)
-    # hours = int(timeOffsetInHours)
+    
     fraction, whole = math.modf(timeOffsetInHours)
+
     hours = int(whole)
     minutes = int(fraction * 60)
+
     HH = f"{hours}" if hours > 9 else f"0{hours}"
     MM = f"{minutes}" if minutes > 9 else f"0{minutes}"
+
     return "-"+HH+MM if westOfGMT else "+"+HH+MM
 
 
 def updateCurrentPortalHead(ptr):
     currentPortalHandle = open(".shed/CUR_PORTAL", "r")
+    
     currentPortal = currentPortalHandle.readline()
 
     currentShellHandle = open(f".shed/{currentPortal[5:-1]}", "w")
@@ -27,55 +34,68 @@ def updateCurrentPortalHead(ptr):
     currentShellHandle.close()
 
 
-def getCurrentPortalHash():
+def getCurrentShellHash():
+
     currentPortalHandle = open(".shed/CUR_PORTAL", "r")
+
     currentPortal = currentPortalHandle.readline()
-    
-    # go to the current portal
+
     currentShellHandle = open(f".shed/{currentPortal[5:-1]}", "r")
+
     currentShell = currentShellHandle.readline()
-    # go the hash of the cur portal
-    # open the shell
-    currentShellContentHandle = open(f".shed/shells/{currentShell[:-1]}", "rb")
+
+    return currentShell[:-1]
+
+
+def getCurrentPortalTreeHash():
+
+    currentShellHash = getCurrentShellHash()
+
+    currentShellContentHandle = open(f".shed/shells/{currentShellHash}", "rb")
+
     currentShellContent = currentShellContentHandle.read()
-    # unzip it
+
     decompressedShell = zlib.decompress(currentShellContent).decode().splitlines()
-    print(decompressedShell)
-    # git the tree hash
-    # lineCounter = 0
-    # while lineCounter < 2:
-    #     treeHash = decompressedShell.readline()
-    #     lineCounter += 1
+
     treeHash = decompressedShell[0][-40:]
+
     return treeHash
 
 
 def createCommitBlob(commitData):
+
     treeHash = commitData[0]
+
     parentHash = commitData[1]
+
     authorName = commitData[2]
+
     authorEmail = commitData[3]
+
     currentTime = commitData[4]
+
     timeOffset = commitData[5]
+
     message = commitData[6]
 
     content = f"tree {treeHash}\nparent {parentHash}\nauthor {authorName} <{authorEmail}> {currentTime} {timeOffset}\ncommitter {authorName} <{authorEmail}> {currentTime} {timeOffset}\n\n{message}\n"
     # the author and the commiter are the same except for a couple of cases ref:https://stackoverflow.com/questions/6755824/what-is-the-difference-between-author-and-committer-in-git
-    print(content)
+    
     content = bytes(content, 'utf-8')
-    header = bytes(f"commit {len(content)}", 'utf-8')
-    data = header +b'\x00'+ content
-    fileName = hashlib.sha1(data).hexdigest()
-    print(fileName)
 
-    # ['commit 309\x00tree ', 'parent ', 'author  <> 1712329881 +0200', 'committer Abd_el_wahab <63767622+abdelwahabram@users.noreply.github.com>  ', '', ]
-    # zib and save
-    store = zlib.compress(data)
+    header = bytes(f"commit {len(content)}", 'utf-8')
+
+    blobContent = header +b'\x00'+ content
+    fileName = hashlib.sha1(blobContent).hexdigest()
+    
+
+    compressedContent = zlib.compress(blobContent)
+
     with open(f".shed/shells/{fileName}", "wb") as blob:
-        blob.write(store)
+        blob.write(compressedContent)
     
     updateCurrentPortalHead(fileName)
-    pass
+    return
 
 
 def repositoryExists():
@@ -114,11 +134,11 @@ def readTree(treeHash, parent = "", output = []):
             readTree(hexValue, f"{parent}/{fileName}" if parent else f"{fileName}", output)
     return
 
+
 class User:
     def __init__(self):
         self.name = "abdo"
         self.email = "abdo@shed.com"
-    
 
 
 class TreePath:
@@ -155,9 +175,9 @@ class TreePath:
             startOfLine = f"{data[0]} {file}\0"
             startOfLine = bytes(startOfLine, 'utf-8')
             content+= startOfLine + hash
-        print(content)
+        # print(content)
         header = bytes(f"tree {len(content)}\x00", 'utf-8')
-        print(header)
+        # print(header)
         treeObject = header + content
         fileName = hashlib.sha1(treeObject)
         fileName = fileName.hexdigest()
@@ -194,7 +214,7 @@ class UNDER_CONSTRUCTION_AREA_MAINTAINER:
             return 
 
 
-        treeHash = getCurrentPortalHash()
+        treeHash = getCurrentPortalTreeHash()
 
         output = []
         readTree(treeHash, "", output)
@@ -272,61 +292,60 @@ class UNDER_CONSTRUCTION_AREA_MAINTAINER:
     
 
     def build(self, message):
-        # check if idx file exists
-        path = Path(".shed/UNDER_CONSTRUCTION_AREA")
-        if not path.is_file():
-            print("no changes lately")
-            return
-        # check if new Changes exist
 
         isChanged = False
-        for file in self.newShell.values():
-            if file["status"] != "no change":
+        for fileMetadata in self.newShell.values():
+
+            if fileMetadata["status"] != "no change":
+
                 isChanged = True
                 break
+        
+
         if not isChanged:
+
             print("no changes lately")
             return
 
 
-
-        # create an adjacency tree for the newShell
+        # create a tree data structure to store the data of
+        # the commit tree and its subtrees
         treePath = TreePath()
-        for filePath, data in self.newShell.items():
-            path = filePath.split(sep="/")
-            treePath.addPath(path, data["hash"])
+
+        for filePath, fileMetaData in self.newShell.items():
+
+            parentsList = filePath.split(sep="/")
+            treePath.addPath(parentsList, fileMetaData["hash"])
         
-        print(555)
-        print(message)
-        treePath.traverse()
+
         treeHash = treePath.buildTree()[1]
-        print(treeHash)
-        parentHash = getCurrentPortalHash()
-        print(parentHash)
-        # iterate the list and create a shell pointing to the root tree as a commit in git
-        # now we have the tree hash, the parent tree hash
+        
+        # to be fixed later ==> the first commit ever has no parent
+        parentHash = getCurrentShellHash()
+
+        
         # we need to config user ==> create a temp user class and configure it later
         currentUser = User()
-        # and access time and transform it into secnds
+
         currentTime = int(time.time())
-        # print(currentTime)
-        # print(time.altzone)
-        # print(time.timezone)
-        # print(time.tzname)
-        # print(time.localtime().tm_gmtoff)
-        # print(tzlocal.get_localzone())
+
         timeOffset = getTimeOffset()
-        print(timeOffset)
+        
         commitData = [treeHash, parentHash, currentUser.name, currentUser.email, currentTime, timeOffset, message]
         # commitData = ["3af7257939102e630a0a689e6444e4db5300a594","82e887d82baa77dac5fcd56306eade9bfe99276f","Abd_el_wahab","63767622+abdelwahabram@users.noreply.github.com", "1712329881", "+0200", 'created basic repository initializer']
 
         createCommitBlob(commitData)
-        # update idxFile ==> delete
-        print(5555)
+        
         UnderConstructionPath = Path(".shed/UNDER_CONSTRUCTION_AREA")
-        UnderConstructionPath.unlink()
-        # update the currentPortal head
 
+        UnderConstructionPath.unlink()
+
+        self.prepareArea()
+
+        print("#changes was comitted successfully#")
+
+        return
+        
 
     def writeUnderConstructionArea(self):
         jsonObject = {"currentShell": self.currentShell, "newShell": self.newShell}
@@ -340,5 +359,6 @@ a = UNDER_CONSTRUCTION_AREA_MAINTAINER()
 a.prepareArea()
 
 a.addFile("source/init.py")
+print("############################################")
 
-# a.build("msg")
+a.build("msg2")

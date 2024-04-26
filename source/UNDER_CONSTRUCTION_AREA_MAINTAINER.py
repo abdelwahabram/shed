@@ -287,9 +287,7 @@ class UNDER_CONSTRUCTION_AREA_MAINTAINER:
             self.newShell[fileName] = {"hash": fileHash, "mode": mode, "status":"no change"}
 
 
-        jsonObject = {"currentShell": self.currentShell, "newShell": self.newShell}
-        with open(".shed/UNDER_CONSTRUCTION_AREA", "w") as out:
-            json.dump(jsonObject, out)
+        self.writeUnderConstructionArea()
         
 
     def addFile(self, fileName):

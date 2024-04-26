@@ -83,7 +83,10 @@ def createCommitBlob(commitData):
 
     message = commitData[6]
 
-    content = f"tree {treeHash}\nparent {parentHash}\nauthor {authorName} <{authorEmail}> {currentTime} {timeOffset}\ncommitter {authorName} <{authorEmail}> {currentTime} {timeOffset}\n\n{message}\n"
+    # the first commit has no parent ==> we ommit this part
+    parent = f"parent {parentHash}\n" if parentHash else ""
+
+    content = f"tree {treeHash}\n{parent}author {authorName} <{authorEmail}> {currentTime} {timeOffset}\ncommitter {authorName} <{authorEmail}> {currentTime} {timeOffset}\n\n{message}\n"
     # the author and the commiter are the same except for a couple of cases ref:https://stackoverflow.com/questions/6755824/what-is-the-difference-between-author-and-committer-in-git
     
     content = bytes(content, 'utf-8')
@@ -98,7 +101,7 @@ def createCommitBlob(commitData):
 
     with open(f".shed/shells/{fileName}", "wb") as blob:
         blob.write(compressedContent)
-    
+    print(fileName)
     updateCurrentPortalHead(fileName)
     return
 
@@ -269,7 +272,7 @@ class UNDER_CONSTRUCTION_AREA_MAINTAINER:
             # if there's no commit before then the we write an empty self.currentShell dict
 
             self.writeUnderConstructionArea()
-            
+
             return
         
         output = []
@@ -446,11 +449,11 @@ a = UNDER_CONSTRUCTION_AREA_MAINTAINER()
 
 a.prepareArea()
 
-# a.addFile("source/init.py")
+a.addFile("source/init.py")
 # a.showStatus()
 # print("############################################")
 # a.addFile("source/hash.py")
 # a.showStatus()
 # print("############################################")
-# a.build("msg3")
+a.build("testing creating first commit with no parent")
 # a.showStatus()

@@ -1,7 +1,7 @@
 
 import hashlib, zlib, json
 from pathlib import Path
-import os.path, time, math
+import os, time, math
 
 def getTimeOffset():
     
@@ -31,6 +31,12 @@ def updateCurrentPortalHead(ptr):
 
     with open(f".shed/{currentPortal[5:-1]}", "w") as currentShellHandle:
         currentShellHandle.write(f"{ptr}\n")
+
+
+def getCurrentPortal():
+    with open(".shed/CUR_PORTAL", "r") as currentPortalHandle:
+        currentPortal = currentPortalHandle.readline()[5:-1]
+    return currentPortal
 
 
 def getCurrentShellHash():
@@ -129,6 +135,46 @@ def readTree(treeHash, parent = "", output = []):
         else:
             readTree(hexValue, f"{parent}/{fileName}" if parent else f"{fileName}", output)
     return
+
+
+def listAllFiles(parent = ""):
+
+    currentList = os.listdir("." if not parent else f"{parent}/.")
+
+    output = []
+    for item in currentList:
+        if item[0] == ".": continue
+
+        filePath = item if not parent else parent + "/" + item
+
+        if Path(filePath).is_file():
+        
+            output.append(filePath)
+            continue
+
+        output += listAllFiles(filePath)
+    
+    return output
+
+
+def createFileBlobContent(fileName):
+    with open(fileName, "r") as fileObject:
+        content = fileObject.read()
+    
+    header = f"blob {len(content.encode('utf-8'))}\0"
+
+    blobContent = bytes(header + content, 'utf-8')
+
+    return blobContent
+
+
+def hashFileBlobContent(blobContent):
+
+    hashObj = hashlib.sha1(blobContent)
+
+    hexValue = hashObj.hexdigest()
+
+    return hexValue
 
 
 class User:
@@ -353,13 +399,55 @@ class UNDER_CONSTRUCTION_AREA_MAINTAINER:
             json.dump(jsonObject, out)
 
 
+    def showStatus(self):
+
+        filesList = listAllFiles()
+        # iterate all the files and create blob content and hash it
+        # compare the hash with the value in newShell and currentShell
+
+        underConstructionFiles = []
+        modifiedFiles = []
+        notTrackedFiles = []
+
+        for fileName in filesList:
+            if fileName not in self.newShell:
+                notTrackedFiles.append(fileName)
+                continue
+
+            fileBlobContent = createFileBlobContent(fileName)
+            fileHashHex = hashFileBlobContent(fileBlobContent)
+
+            if fileHashHex != self.newShell[fileName]["hash"]:
+                modifiedFiles.append(fileName)
+            
+            if self.newShell[fileName]["status"] != "no change":
+                underConstructionFiles.append(fileName)
+        currentPortal = getCurrentPortal().split("/")[-1]
+        print(f"current portal ==> {currentPortal}")
+        print("added files: ")
+        for file in underConstructionFiles:
+            print(file)
+        
+        print("modified files: ")
+        for file in modifiedFiles:
+            print(file)
+        
+        print("no tracked files: ")
+        for file in notTrackedFiles:
+            print(file)
+        return
+
+
 
 a = UNDER_CONSTRUCTION_AREA_MAINTAINER()
 
 a.prepareArea()
 
 a.addFile("source/init.py")
+a.showStatus()
 print("############################################")
 a.addFile("source/hash.py")
+a.showStatus()
 print("############################################")
 a.build("msg3")
+a.showStatus()

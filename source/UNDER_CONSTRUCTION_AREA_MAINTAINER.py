@@ -52,6 +52,10 @@ def getCurrentShellHash():
 def getCurrentPortalTreeHash():
 
     currentShellHash = getCurrentShellHash()
+    print(f"a{currentShellHash}a")
+    if currentShellHash == "":
+        # if this is a fresh repository with no commits before
+        return False
 
     with open(f".shed/shells/{currentShellHash}", "rb") as currentShellContentHandle:
         currentShellContent = currentShellContentHandle.read()
@@ -261,6 +265,13 @@ class UNDER_CONSTRUCTION_AREA_MAINTAINER:
 
         treeHash = getCurrentPortalTreeHash()
 
+        if treeHash == False:
+            # if there's no commit before then the we write an empty self.currentShell dict
+
+            self.writeUnderConstructionArea()
+            
+            return
+        
         output = []
         readTree(treeHash, "", output)
 
@@ -435,11 +446,11 @@ a = UNDER_CONSTRUCTION_AREA_MAINTAINER()
 
 a.prepareArea()
 
-a.addFile("source/init.py")
-a.showStatus()
-print("############################################")
-a.addFile("source/hash.py")
-a.showStatus()
-print("############################################")
-a.build("msg3")
-a.showStatus()
+# a.addFile("source/init.py")
+# a.showStatus()
+# print("############################################")
+# a.addFile("source/hash.py")
+# a.showStatus()
+# print("############################################")
+# a.build("msg3")
+# a.showStatus()

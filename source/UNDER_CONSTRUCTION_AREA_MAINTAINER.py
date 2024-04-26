@@ -41,10 +41,9 @@ def getCurrentPortal():
 
 def getCurrentShellHash():
 
-    with open(".shed/CUR_PORTAL", "r") as currentPortalHandle:
-        currentPortal = currentPortalHandle.readline()
+    currentPortal = getCurrentPortal()
 
-    with open(f".shed/{currentPortal[5:-1]}", "r") as currentShellHandle:
+    with open(f".shed/{currentPortal}", "r") as currentShellHandle:
         currentShell = currentShellHandle.readline()
 
     return currentShell[:-1]
@@ -285,7 +284,7 @@ class UNDER_CONSTRUCTION_AREA_MAINTAINER:
             return
 
         blobContent = createFileBlobContent(fileName)
-        
+
         hexValue = hashFileBlobContent(blobContent)
         
 

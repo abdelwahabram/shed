@@ -285,9 +285,8 @@ class UNDER_CONSTRUCTION_AREA_MAINTAINER:
             return
 
         blobContent = createFileBlobContent(fileName)
-
-        hashObj = hashlib.sha1(blobContent)
-        hexValue = hashObj.hexdigest()
+        
+        hexValue = hashFileBlobContent(blobContent)
         
 
         if fileName not in self.newShell:

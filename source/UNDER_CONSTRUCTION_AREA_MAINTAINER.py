@@ -283,14 +283,8 @@ class UNDER_CONSTRUCTION_AREA_MAINTAINER:
 
         if not repositoryExists():
             return
-        
-        
-        with open(fileName, "r") as fileObject:
-            content = fileObject.read()
-        
-        header = f"blob {len(content.encode('utf-8'))}\0"
 
-        blobContent = bytes(header + content, 'utf-8')
+        blobContent = createFileBlobContent(fileName)
 
         hashObj = hashlib.sha1(blobContent)
         hexValue = hashObj.hexdigest()

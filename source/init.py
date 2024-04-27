@@ -2,17 +2,21 @@ import os
 
 class RepositoryInitializer:
     def __init__(self):
-        self.initialize()
-    def initialize(self):
-        dirs = ['.shed', '.shed/shells', '.shed/portals', ]
+        self.initializeRepository()
+    
+
+    def initializeRepository(self):
+        
+        dirs = ['.shed', '.shed/shells', '.shed/ptrs', '.shed/ptrs/portals' ]
         for dir in dirs:
             os.mkdir(dir)
-        currentBranch = open(".shed/CUR_PORTAL", "w")
-        currentBranch.close()
-        staging = open(".shed/UNDER_CONSTRUCTION_AREA", "w")
-        staging.close()
+        
+        with open(".shed/ptrs/portals/master", "w+") as currentShellHash:
+            currentShellHash.write("\n")
+        
+        with open(".shed/CUR_PORTAL", "w") as currentPortal:
+            currentPortal.write("ptr: ptrs/portals/master\n")
 
-print("changes to be tracked")
-print("changes to be trackedagain")
-print("changes to be trackedagainagain")
+
+
 A = RepositoryInitializer()

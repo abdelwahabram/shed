@@ -12,5 +12,7 @@ class RepositoryInitializer:
         staging = open(".shed/UNDER_CONSTRUCTION_AREA", "w")
         staging.close()
 
-
+print("changes to be tracked")
+print("changes to be trackedagain")
+print("changes to be trackedagainagain")
 A = RepositoryInitializer()

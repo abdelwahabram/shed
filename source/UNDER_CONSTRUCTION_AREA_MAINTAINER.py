@@ -52,7 +52,7 @@ def getCurrentShellHash():
 def getCurrentPortalTreeHash():
 
     currentShellHash = getCurrentShellHash()
-    print(f"a{currentShellHash}a")
+    
     if currentShellHash == "":
         # if this is a fresh repository with no commits before
         return False

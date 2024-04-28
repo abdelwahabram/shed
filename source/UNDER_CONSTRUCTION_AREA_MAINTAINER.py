@@ -52,7 +52,7 @@ def getCurrentShellHash():
 def getCurrentPortalTreeHash():
 
     currentShellHash = getCurrentShellHash()
-    print(f"a{currentShellHash}a")
+    
     if currentShellHash == "":
         # if this is a fresh repository with no commits before
         return False
@@ -299,6 +299,15 @@ class UNDER_CONSTRUCTION_AREA_MAINTAINER:
 
         hexValue = hashFileBlobContent(blobContent)
         
+        path = Path(f'.shed/shells/{hexValue}')
+
+        if not path.is_file():
+
+            compressedContent = zlib.compress(blobContent)
+
+            with open(path, "wb") as blob:
+                
+                blob.write(compressedContent)
 
         if fileName not in self.newShell:
             
@@ -330,14 +339,6 @@ class UNDER_CONSTRUCTION_AREA_MAINTAINER:
         self.newShell[fileName] = {"hash":hexValue, "mode": 100644, "status": "modified"}
         self.writeUnderConstructionArea()
 
-
-        compressed = zlib.compress(blobContent)
-        path = Path(f'.shed/shells/{hexValue}')
-        if path.is_file():
-            print("updates was tracked successfuly")
-            return
-        with open(path, "wb") as blob:
-            blob.write(compressed)
         print("updates was tracked successfuly")
     
 

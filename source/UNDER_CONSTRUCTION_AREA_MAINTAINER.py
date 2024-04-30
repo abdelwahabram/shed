@@ -185,8 +185,31 @@ def hashFileBlobContent(blobContent):
 
 class User:
     def __init__(self):
-        self.name = "abdo"
-        self.email = "abdo@shed.com"
+        self.name = ""
+        self.email = ""
+
+        if Path(".shed/shedUserConf.json").is_file():
+            self.loadUserData()
+            return
+        self.setUserData()
+    
+    def loadUserData(self):
+        with open(".shed/shedUserConf.json", "r") as userConfiguration:
+            user = json.load(userConfiguration)
+        
+        self.name = user["name"]
+
+        self.email = user["email"]
+    
+    def setUserData(self, name = "", email = ""):
+        self.name = name if name else self.name
+        self.email = email if email else self.email
+
+        user = {"name": self.name, "email": self.email}
+
+        with open(".shed/shedUserConf.json", "w+") as userConfiguration:
+            json.dump(user, userConfiguration)
+
 
 
 class TreePath:
@@ -377,6 +400,7 @@ class UNDER_CONSTRUCTION_AREA_MAINTAINER:
         
         # we need to config user ==> create a temp user class and configure it later
         currentUser = User()
+        currentUser.setUserData("abdo", "body@shed.com")
 
         currentTime = int(time.time())
 

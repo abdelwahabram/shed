@@ -2,6 +2,7 @@
 import hashlib, zlib, json
 from pathlib import Path
 import os, time, math
+from init import findRepository
 
 def getTimeOffset():
     
@@ -24,40 +25,52 @@ def getTimeOffset():
     return "-"+HH+MM if westOfGMT else "+"+HH+MM
 
 
-def updateCurrentPortalHead(ptr):
+def updateCurrentPortalHead(ptr, repositoryPath):
 
-    with open(".shed/CUR_PORTAL", "r") as currentPortalHandle:
+    currentPortalPath = repositoryPath.joinpath(".shed/CUR_PORTAL")
+
+    with open(currentPortalPath, "r") as currentPortalHandle:
         currentPortal = currentPortalHandle.readline()
 
-    with open(f".shed/{currentPortal[5:-1]}", "w") as currentShellHandle:
+    currentPointerPath = repositoryPath.joinpath(f".shed/{currentPortal[5:-1]}")
+
+    with open(currentPointerPath, "w") as currentShellHandle:
         currentShellHandle.write(f"{ptr}\n")
 
 
-def getCurrentPortal():
-    with open(".shed/CUR_PORTAL", "r") as currentPortalHandle:
+def getCurrentPortal(repositoryPath):
+
+    currentPortalPath = repositoryPath.joinpath(".shed/CUR_PORTAL")
+
+    with open(currentPortalPath, "r") as currentPortalHandle:
         currentPortal = currentPortalHandle.readline()[5:-1]
+    
     return currentPortal
 
 
-def getCurrentShellHash():
+def getCurrentShellHash(repositoryPath):
 
-    currentPortal = getCurrentPortal()
+    currentPortal = getCurrentPortal(repositoryPath)
 
-    with open(f".shed/{currentPortal}", "r") as currentShellHandle:
+    currentPointerPath = repositoryPath.joinpath(f".shed/{currentPortal}")
+
+    with open(currentPointerPath, "r") as currentShellHandle:
         currentShell = currentShellHandle.readline()
 
     return currentShell[:-1]
 
 
-def getCurrentPortalTreeHash():
+def getCurrentPortalTreeHash(repositoryPath):
 
-    currentShellHash = getCurrentShellHash()
+    currentShellHash = getCurrentShellHash(repositoryPath)
     
     if currentShellHash == "":
         # if this is a fresh repository with no commits before
         return False
 
-    with open(f".shed/shells/{currentShellHash}", "rb") as currentShellContentHandle:
+    currentShellPath = repositoryPath.joinpath(f".shed/shells/{currentShellHash}")
+
+    with open(currentShellPath, "rb") as currentShellContentHandle:
         currentShellContent = currentShellContentHandle.read()
 
     decompressedShell = zlib.decompress(currentShellContent).decode().splitlines()
@@ -83,6 +96,8 @@ def createCommitBlob(commitData):
 
     message = commitData[6]
 
+    repositoryPath = commitData[7]
+
     # the first commit has no parent ==> we ommit this part
     parent = f"parent {parentHash}\n" if parentHash else ""
 
@@ -99,10 +114,12 @@ def createCommitBlob(commitData):
 
     compressedContent = zlib.compress(blobContent)
 
-    with open(f".shed/shells/{fileName}", "wb") as blob:
+    filePath = repositoryPath.joinpath(f".shed/shells/{fileName}")
+
+    with open(filePath, "wb") as blob:
         blob.write(compressedContent)
     print(fileName)
-    updateCurrentPortalHead(fileName)
+    updateCurrentPortalHead(fileName, repositoryPath)
     return
 
 
@@ -116,9 +133,10 @@ def repositoryExists():
     return False
 
 
-def readTree(treeHash, parent = "", output = []):
+def readTree(treeHash, repositoryPath, parent = "", output = []):
 
-    with open(f".shed/shells/{treeHash}", "rb") as treeHandle:
+    treePath = repositoryPath.joinpath(f".shed/shells/{treeHash}")
+    with open(treePath, "rb") as treeHandle:
         treeContents = treeHandle.read()
 
         decompressedTree = zlib.decompress(treeContents)
@@ -139,32 +157,33 @@ def readTree(treeHash, parent = "", output = []):
         if mode == "100644":
             output.append([mode, f"{parent}/{fileName}" if parent else f"{fileName}", hexValue])
         else:
-            readTree(hexValue, f"{parent}/{fileName}" if parent else f"{fileName}", output)
+            readTree(hexValue, repositoryPath, f"{parent}/{fileName}" if parent else f"{fileName}", output)
     return
 
 
-def listAllFiles(parent = ""):
+def listAllFiles(repositoryPath, currentDirectory):
 
-    currentList = os.listdir("." if not parent else f"{parent}/.")
-
+    # currentList = os.listdir("." if not parent else f"{parent}/.")
+    currentDirectoryContents = os.listdir(currentDirectory)
     output = []
-    for item in currentList:
+    for item in currentDirectoryContents:
         if item[0] == ".": continue
 
-        filePath = item if not parent else parent + "/" + item
+        # filePath = repositoryPath.relative_to(currentDirectory.joinpath(f""))
+        filePath = currentDirectory.joinpath(f"{item}").resolve().relative_to(repositoryPath)
 
-        if Path(filePath).is_file():
+        if filePath.is_file():
         
-            output.append(filePath)
+            output.append(str(filePath))
             continue
 
-        output += listAllFiles(filePath)
+        output += listAllFiles(repositoryPath, filePath)
     
     return output
 
 
-def createFileBlobContent(fileName):
-    with open(fileName, "r") as fileObject:
+def createFileBlobContent(filePath):
+    with open(filePath, "r") as fileObject:
         content = fileObject.read()
     
     header = f"blob {len(content.encode('utf-8'))}\0"
@@ -273,14 +292,17 @@ class UNDER_CONSTRUCTION_AREA_MAINTAINER:
     
 
     def prepareArea(self):
-        if not repositoryExists():
-            return
-        
-        constructionAreaPath = Path(".shed/UNDER_CONSTRUCTION_AREA")
 
+        repositoryPath = findRepository()
+        if repositoryPath == False:
+            print("error404: repo not found")
+            return False
+        
+        # constructionAreaPath = Path()
+        constructionAreaPath = repositoryPath.joinpath(".shed/UNDER_CONSTRUCTION_AREA")
         if constructionAreaPath.is_file():
             
-            with open(".shed/UNDER_CONSTRUCTION_AREA", "r") as stored:
+            with open(constructionAreaPath, "r") as stored:
                 jsonObject = json.load(stored)
 
                 self.currentShell = jsonObject["currentShell"]
@@ -289,17 +311,17 @@ class UNDER_CONSTRUCTION_AREA_MAINTAINER:
             return 
 
 
-        treeHash = getCurrentPortalTreeHash()
+        treeHash = getCurrentPortalTreeHash(repositoryPath)
 
         if treeHash == False:
             # if there's no commit before then the we write an empty self.currentShell dict
 
-            self.writeUnderConstructionArea()
+            self.writeUnderConstructionArea(repositoryPath)
 
             return
         
         output = []
-        readTree(treeHash, "", output)
+        readTree(treeHash, repositoryPath, "", output)
 
         # read the files from the tree and list them into currentShell
         for file in output:
@@ -310,19 +332,25 @@ class UNDER_CONSTRUCTION_AREA_MAINTAINER:
             self.newShell[fileName] = {"hash": fileHash, "mode": mode, "status":"no change"}
 
 
-        self.writeUnderConstructionArea()
+        self.writeUnderConstructionArea(repositoryPath)
         
 
-    def addFile(self, fileName):
+    def addFile(self, filePath):
 
-        if not repositoryExists():
-            return
+        # if not repositoryExists():
+        #     return
 
-        blobContent = createFileBlobContent(fileName)
+        repositoryPath = findRepository()
+
+        if repositoryPath == False:
+            print("error404: repo not found")
+            return False
+
+        blobContent = createFileBlobContent(filePath)
 
         hexValue = hashFileBlobContent(blobContent)
         
-        path = Path(f'.shed/shells/{hexValue}')
+        path = repositoryPath.joinpath(f'.shed/shells/{hexValue}')
 
         if not path.is_file():
 
@@ -331,11 +359,14 @@ class UNDER_CONSTRUCTION_AREA_MAINTAINER:
             with open(path, "wb") as blob:
                 
                 blob.write(compressedContent)
+        
+        fileName = str(filePath.resolve().relative_to(repositoryPath))
+        print(fileName)
 
         if fileName not in self.newShell:
             
             self.newShell[fileName] = {"hash": hexValue, "mode":100644, "status": "created"}
-            self.writeUnderConstructionArea()
+            self.writeUnderConstructionArea(repositoryPath)
 
             print("file added successfully")
 
@@ -354,18 +385,23 @@ class UNDER_CONSTRUCTION_AREA_MAINTAINER:
                 self.newShell[fileName]["hash"] = hexValue
                 self.newShell[fileName]["status"] = "no change"
 
-                self.writeUnderConstructionArea()
+                self.writeUnderConstructionArea(repositoryPath)
                 print("changes undone")
                 return
         
 
         self.newShell[fileName] = {"hash":hexValue, "mode": 100644, "status": "modified"}
-        self.writeUnderConstructionArea()
+        self.writeUnderConstructionArea(repositoryPath)
 
         print("updates was tracked successfuly")
     
 
     def build(self, message):
+        repositoryPath = findRepository()
+
+        if repositoryPath == False:
+            print("error404: no repo found")
+            return False
 
         isChanged = False
         for fileMetadata in self.newShell.values():
@@ -395,7 +431,7 @@ class UNDER_CONSTRUCTION_AREA_MAINTAINER:
         treeHash = treePath.buildTree()[1]
         
         # to be fixed later ==> the first commit ever has no parent
-        parentHash = getCurrentShellHash()
+        parentHash = getCurrentShellHash(repositoryPath)
 
         
         # we need to config user ==> create a temp user class and configure it later
@@ -406,12 +442,12 @@ class UNDER_CONSTRUCTION_AREA_MAINTAINER:
 
         timeOffset = getTimeOffset()
         
-        commitData = [treeHash, parentHash, currentUser.name, currentUser.email, currentTime, timeOffset, message]
+        commitData = [treeHash, parentHash, currentUser.name, currentUser.email, currentTime, timeOffset, message, repositoryPath]
         # commitData = ["3af7257939102e630a0a689e6444e4db5300a594","82e887d82baa77dac5fcd56306eade9bfe99276f","Abd_el_wahab","63767622+abdelwahabram@users.noreply.github.com", "1712329881", "+0200", 'created basic repository initializer']
 
         createCommitBlob(commitData)
         
-        UnderConstructionPath = Path(".shed/UNDER_CONSTRUCTION_AREA")
+        UnderConstructionPath = repositoryPath.joinpath(".shed/UNDER_CONSTRUCTION_AREA")
 
         UnderConstructionPath.unlink()
 
@@ -422,15 +458,22 @@ class UNDER_CONSTRUCTION_AREA_MAINTAINER:
         return
         
 
-    def writeUnderConstructionArea(self):
+    def writeUnderConstructionArea(self, repositoryPath):
         jsonObject = {"currentShell": self.currentShell, "newShell": self.newShell}
-        with open(".shed/UNDER_CONSTRUCTION_AREA", "w") as out:
+
+        constructionAreaPath = repositoryPath.joinpath(".shed/UNDER_CONSTRUCTION_AREA")
+        with open(constructionAreaPath, "w") as out:
             json.dump(jsonObject, out)
 
 
     def showStatus(self):
 
-        filesList = listAllFiles()
+        repositoryPath = findRepository()
+        if repositoryPath == False:
+            print("error404: repo not found")
+            return False
+
+        filesList = listAllFiles(repositoryPath, repositoryPath)
         # iterate all the files and create blob content and hash it
         # compare the hash with the value in newShell and currentShell
 
@@ -451,7 +494,7 @@ class UNDER_CONSTRUCTION_AREA_MAINTAINER:
             
             if self.newShell[fileName]["status"] != "no change":
                 underConstructionFiles.append(fileName)
-        currentPortal = getCurrentPortal().split("/")[-1]
+        currentPortal = getCurrentPortal(repositoryPath).split("/")[-1]
         print(f"current portal ==> {currentPortal}")
         print("added files: ")
         for file in underConstructionFiles:
@@ -472,11 +515,17 @@ a = UNDER_CONSTRUCTION_AREA_MAINTAINER()
 
 a.prepareArea()
 
-a.addFile("source/init.py")
+initPyPath = Path("source/init.py")
+
+print(initPyPath.is_file())
+
+a.addFile(initPyPath)
 # a.showStatus()
-# print("############################################")
-# a.addFile("source/hash.py")
-# a.showStatus()
-# print("############################################")
-a.build("testing creating first commit with no parent")
-# a.showStatus()
+# # print("############################################")
+# # a.addFile("source/hash.py")
+# # a.showStatus()
+# # print("############################################")
+# a.build("testing adding repo path")
+a.showStatus()
+
+# print(findRepository())

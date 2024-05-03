@@ -1,7 +1,30 @@
-import os
+import os, pathlib
+
+def findRepository():
+    path = pathlib.Path()
+
+    while True:
+
+        repositoryPath = path.joinpath(".shed")
+        if repositoryPath.exists():
+            return path.resolve()
+        
+        # if this is a mounting point: return false
+        if os.path.ismount(path):
+
+            return False
+
+        path = path.parent.resolve()
+    return False
+
+# print(findRepository())
 
 class RepositoryInitializer:
-    def __init__(self):
+    def __init__(self)->bool:
+        foundRepositoryPath = findRepository()
+        if foundRepositoryPath != False:
+            print("error403: repository already exists")
+            return
         self.initializeRepository()
     
 

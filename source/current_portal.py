@@ -49,5 +49,11 @@ class CurrentPortal:
         
         return current_portal
 
-    def setCurrentPortalHead(self):
-        pass
+    def set_current_pointer(self, ptr):
+        current_portal = self.get_current_portal()
+        current_pointer_path = self.repository_path.joinpath(f".shed/{current_portal}")
+        
+        with open(current_pointer_path, "w") as current_pointer_handle:
+            current_pointer_handle.write(f"{ptr}\n")
+            
+        return True

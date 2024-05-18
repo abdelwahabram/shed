@@ -28,3 +28,7 @@ class DirectoryPath:
 
     def get_path(self):
         return self.__directory_path
+
+    
+    def set_path(self, path):
+        self.__directory_path = path.resolve()

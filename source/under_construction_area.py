@@ -6,7 +6,7 @@ from shell import Shell
 from tree import Tree
 
 from pathlib import Path
-import json
+import json, glob
 
 
 class UnderConstructionArea:
@@ -150,6 +150,81 @@ class UnderConstructionArea:
         return True
 
     
+    def show_status(self):
+        
+        if self.directory_path.get_path() == None:
+            print("error404: repo not found")
+            return False
+        
+        all_files = self.list_all_files()
+        
+        under_construction_files = []
+        modified_files = []
+        not_tracked_files = []
+        
+        for file_path in all_files:
+            file_object = File(path = file_path, directory_path = self.directory_path.get_path())
+            file_name = file_object.get_name()
+            
+            if file_name not in self.new_shell:
+                not_tracked_files.append(file_name)
+                continue
+            
+            # fileBlobContent = createFileBlobContent(file_name)
+            # fileHashHex = hashFileBlobContent(fileBlobContent)
+            file_object.create_block_content()
+            file_object.hash_block_content()
+            
+            file_hash = file_object.get_hash()
+            
+            if file_hash != self.new_shell[file_name]["hash"]:
+                modified_files.append(file_name)
+            
+            if self.new_shell[file_name]["status"] != "no change":
+                under_construction_files.append(file_name)
+        
+        # print(f"1{under_construction_files}")
+        # print(f"2{modified_files}")
+        # print(f"3{not_tracked_files}")
+        
+        current_portal = self.current_portal.get_current_portal()
+        print(f"current portal {current_portal}")
+        
+        if under_construction_files:
+            print("\nto be built files: ")
+            for file in under_construction_files:
+                print(file)
+        
+        
+        if modified_files:
+            print("\nupdates: ")
+            for file in modified_files:
+                print(file)
+        
+        
+        if not_tracked_files:
+            print("\ncreated but not tracked files: ")
+            for file in not_tracked_files:
+                print(file)
+        return True
+        
+    
+    def list_all_files(self):
+        output = []
+        all_pathes = self.directory_path.get_path().relative_to(self.directory_path.get_path()).glob('**/*')
+        for path in all_pathes:
+            
+            if not path.is_file():
+                continue
+            
+            if str(path)[0] == '.':
+                continue
+            
+            output.append(path)
+         
+        return output
+    
+    
     def write_area(self):
         area_object = {"current_shell": self.current_shell, "new_shell": self.new_shell}
 
@@ -179,13 +254,15 @@ class UnderConstructionArea:
 
 B = UnderConstructionArea()
 B.create()
-test_path = Path("source/user.py")
-# print(test_path.exists())
-# print(B.current_shell)
-# print(B.new_shell)
+# test_path = Path("source/user.py")
+# # print(test_path.exists())
+print(B.current_shell)
+print(B.new_shell)
 
-print("/////////////////////////////////////")
-B.add_file(test_path)
-# print(B.current_shell)
-# print(B.new_shell)
-B.build("jhj")
+# print("/////////////////////////////////////")
+# B.add_file(test_path)
+# # print(B.current_shell)
+# # print(B.new_shell)
+# B.build("jhj")
+
+B.show_status()

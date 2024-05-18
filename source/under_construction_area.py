@@ -11,19 +11,19 @@ import json, glob
 
 class UnderConstructionArea:
     
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
 
         self.current_shell = {}
 
         self.new_shell = {} 
 
-        self.directory_path = DirectoryPath()
+        self.directory_path = kwargs.get("directory_path", DirectoryPath())
 
         self.area_path = self.__set_area_path()
 
         self.current_portal = CurrentPortal(self.directory_path.get_path())
         
-        self.user = User(directory_path = self.directory_path.get_path())
+        self.user = kwargs.get("user", User(directory_path = self.directory_path.get_path()))
     
 
     def create(self):
@@ -63,7 +63,7 @@ class UnderConstructionArea:
         if self.directory_path.get_path() == None:
             print("error404: repo not found")
             return False
-        
+        print(file_path)
         file_object = File(directory_path = self.directory_path.get_path(), path = file_path)
         
         file_object.create()
@@ -71,6 +71,7 @@ class UnderConstructionArea:
         hash_value = file_object.get_hash()
         
         file_name = file_object.get_name()
+        print(file_name)
         
         if file_name not in self.new_shell:
             self.new_shell[file_name] = {"hash": hash_value, "mode":100644, "status": "created"}
@@ -252,17 +253,17 @@ class UnderConstructionArea:
         return self.directory_path.get_path().joinpath(".shed/UNDER_CONSTRUCTION_AREA")
 
 
-B = UnderConstructionArea()
-B.create()
-# test_path = Path("source/user.py")
-# # print(test_path.exists())
-print(B.current_shell)
-print(B.new_shell)
+# B = UnderConstructionArea()
+# B.create()
+# # test_path = Path("source/user.py")
+# # # print(test_path.exists())
+# print(B.current_shell)
+# print(B.new_shell)
 
-# print("/////////////////////////////////////")
-# B.add_file(test_path)
-# # print(B.current_shell)
-# # print(B.new_shell)
-# B.build("jhj")
+# # print("/////////////////////////////////////")
+# # B.add_file(test_path)
+# # # print(B.current_shell)
+# # # print(B.new_shell)
+# # B.build("jhj")
 
-B.show_status()
+# B.show_status()

@@ -253,7 +253,25 @@ class UnderConstructionArea:
         return self.directory_path.get_path().joinpath(".shed/UNDER_CONSTRUCTION_AREA")
 
 
+    def show_difference(self):
+        
+        # read every file in new_shell
+        # create a File object for this file with the given hash and path
+        # the File class can read the compressed objec from the hash and the modified content
+        # use diff lib to compare betweeen the two versions(create my own vresion of diff later)
+        
+        for file_name, file_meta_data in self.new_shell.items():
+            # if file_meta_data["status"] != "modified":
+            #     continue
+            
+            file_path = self.directory_path.get_path().joinpath(file_name)
+            file_object = File(path = file_path, directory_path = self.directory_path.get_path(), hash_ =file_meta_data["hash"])
+            print(file_object.get_difference())
+        return
+
+    
 # B = UnderConstructionArea()
+# B.show_difference()
 # B.create()
 # # test_path = Path("source/user.py")
 # # # print(test_path.exists())

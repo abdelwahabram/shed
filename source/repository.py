@@ -55,3 +55,24 @@ class Repository:
     def show_status(self):
         self.under_construction_area.create()
         return self.under_construction_area.show_status()
+
+    
+    def show_difference(self):
+        self.under_construction_area.create()
+        self.under_construction_area.show_difference()
+        return
+
+
+A = Repository()
+A.show_difference()
+
+# P = Path("source/tree.py")
+# print(P.exists())
+# print("**********************************************")
+# A.show_status()
+# A.add_file(P)
+# print("**********************************************")
+# # A.show_status()
+# A.build("new tesssssssst")
+# print("**********************************************")
+# # A.show_status()

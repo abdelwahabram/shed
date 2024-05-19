@@ -18,11 +18,15 @@ class File(Block):
     
     def read(self):
         block_path = self.directory_path.joinpath(f".shed/blocks/{self.__hash}")
+        
         with open(block_path, "rb") as block_handle:
             compressed_content = block_handle.read()
         
+        
         content = zlib.decompress(compressed_content).decode('utf-8')
+        
         firstline, content = content.split('\n', 1)
+        
         return content
     
     def create(self):
@@ -71,7 +75,7 @@ class File(Block):
 
 
     def get_difference(self):
-        print(55555)
+        
         before_content = self.read()
         after_content = self.read_from_disk()
         

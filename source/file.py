@@ -1,5 +1,6 @@
 from block import Block
 import hashlib, zlib
+from difflib import unified_diff
 
 class File(Block):
     def __init__(self, *args, **kwargs):
@@ -16,7 +17,13 @@ class File(Block):
         self.__name = str(self.path.resolve().relative_to(self.directory_path))
     
     def read(self):
-        return
+        block_path = self.directory_path.joinpath(f".shed/blocks/{self.__hash}")
+        with open(block_path, "rb") as block_handle:
+            compressed_content = block_handle.read()
+        
+        content = zlib.decompress(compressed_content).decode('utf-8')
+        firstline, content = content.split('\n', 1)
+        return content
     
     def create(self):
         self.create_block_content()
@@ -61,4 +68,18 @@ class File(Block):
     def get_name(self):
         self.__name = str(self.path.resolve().relative_to(self.directory_path))
         return self.__name          
+
+
+    def get_difference(self):
+        print(55555)
+        before_content = self.read()
+        after_content = self.read_from_disk()
         
+        difference = unified_diff(before_content.splitlines(keepends = True), after_content.splitlines(keepends = True), fromfile = f"{self.__name}:before", tofile = f"{self.__name}:after", lineterm = "\n")       
+        return '\n'.join(list(difference))
+    
+    
+    def read_from_disk(self):
+        with open(self.path, "r") as file_handle:
+            content = file_handle.read()
+        return content

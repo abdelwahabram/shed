@@ -38,12 +38,8 @@ class Shell(Block):
         parent = f"parent {self.__parent_hash}\n" if self.__parent_hash else ""
         
         current_time = self.__time.get_time()
-        print(current_time)
-        name = "abdelwahabram"
-        email = "abdelwahab@shed.com"
-        body = bytes(f"tree {self.__tree_hash}\n{parent}author {name} <{email}> {current_time} {self.__time.get_time_zone_offset()}\ncommitter {name} <{email}> {current_time} {self.__time.get_time_zone_offset()}\n\n{self.__message}\n", 'utf-8')
 
-        # body = bytes(f"tree {self.__tree_hash}\n{parent}author {self.__user.get_name()} <{self.__user.get_email()}> {current_time} {self.__time.get_time_zone_offset()}\ncommitter {self.__user.get_name()} <{self.__user.get_email()}> {current_time} {self.__time.get_time_zone_offset()}\n\n{self.__message}\n", 'utf-8')
+        body = bytes(f"tree {self.__tree_hash}\n{parent}author {self.__user.get_name()} <{self.__user.get_email()}> {current_time} {self.__time.get_time_zone_offset()}\ncommitter {self.__user.get_name()} <{self.__user.get_email()}> {current_time} {self.__time.get_time_zone_offset()}\n\n{self.__message}\n", 'utf-8')
 
         header = bytes(f"commit {len(body)}", 'utf-8') + b"\x00"
         

@@ -3,7 +3,7 @@ import time, math
 class Time:
     def __init__(self):
         
-        self.time = time
+        self.time = time.time()
         
         self.time_zone_offset = None
         
@@ -11,7 +11,7 @@ class Time:
     
     def get_time(self):
         
-        return int(self.time.time())
+        return int(time.time())
     
     
     def set_time_zone_offset(self):

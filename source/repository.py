@@ -114,7 +114,7 @@ class Repository:
             
             portal_name = str(portal_path.relative_to(portals_path))
             
-            head_path = self.directory_path.get_path().joinpath(f".git/refs/heads/{portal_name}") if portal_name != "master" else self.directory_path.get_path().joinpath(".gitt/refs/heads/main")
+            head_path = self.directory_path.get_path().joinpath(f".git/refs/heads/{portal_name}") if portal_name != "master" else self.directory_path.get_path().joinpath(".git/refs/heads/main")
             
             shutil.copy(portal_path, head_path)
         

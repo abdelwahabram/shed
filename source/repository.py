@@ -95,10 +95,17 @@ class Repository:
             
             shutil.copy(block_path, new_object_path)
         
-        current_portal_path = self.directory_path.get_path().joinpath(".shed/CUR_PORTAL")
+        
         head_path = self.directory_path.get_path().joinpath(".git/HEAD")
         
-        shutil.copy(current_portal_path, head_path)
+        current_portal = self.under_construction_area.current_portal.get_current_portal()[13:]
+        current_portal = "main" if current_portal == "master" else current_portal
+        
+        current_head = f"ref: refs/heads/{current_portal}" 
+        
+        with open(head_path, "w+") as head_handle:
+            head_handle.write(current_head)
+            
         
         portals_path = self.directory_path.get_path().joinpath(".shed/ptrs/portals/")
         portals = portals_path.glob("*")

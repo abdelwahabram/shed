@@ -1,6 +1,6 @@
-from directory_path import DirectoryPath
-from under_construction_area import UnderConstructionArea
-from user import User
+from source.directory_path import DirectoryPath
+from source.under_construction_area import UnderConstructionArea
+from source.user import User
 from pathlib import Path
 import os, shutil
 
@@ -123,20 +123,20 @@ class Repository:
         return
 
 
-A = Repository()
-A.create()
-# A.show_difference()
-A.turn_into_git_repository()
+# A = Repository()
+# A.create()
+# # A.show_difference()
+# A.turn_into_git_repository()
 
-# P = Path("source/tree.py")
-# # # # print(P.exists())
-# # # # # P = Path("tree.py")
+# # P = Path("source/tree.py")
 # # # # # print(P.exists())
-# # # # # print("**********************************************")
+# # # # # # P = Path("tree.py")
+# # # # # # print(P.exists())
+# # # # # # print("**********************************************")
+# # # # # # A.show_status()
+# # A.add_file(P)
+# # # # # # print("**********************************************")
 # # # # # A.show_status()
-# A.add_file(P)
+# # A.build("new tesssssssst")
 # # # # # print("**********************************************")
-# # # # A.show_status()
-# A.build("new tesssssssst")
-# # # # print("**********************************************")
 # A.show_status()

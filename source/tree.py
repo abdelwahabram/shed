@@ -1,4 +1,4 @@
-from block import Block
+from source.block import Block
 from pathlib import Path
 import zlib, hashlib
 

@@ -1,5 +1,5 @@
-from block import Block
-from time_ import Time
+from source.block import Block
+from source.time_ import Time
 from pathlib import Path
 import zlib, hashlib
 

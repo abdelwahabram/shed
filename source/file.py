@@ -1,4 +1,4 @@
-from block import Block
+from source.block import Block
 import hashlib, zlib
 from difflib import unified_diff
 

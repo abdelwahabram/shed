@@ -23,9 +23,12 @@ class File(Block):
             compressed_content = block_handle.read()
         
         
+
         content = zlib.decompress(compressed_content).decode('utf-8')
         
-        firstline, content = content.split('\n', 1)
+        output = content.split('\n', 1)
+        
+        content = output[1] if len(output) == 2 else ""
         
         return content
     

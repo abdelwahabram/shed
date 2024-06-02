@@ -1,0 +1,27 @@
+[build-system]
+#requires = ["flit_core<4"]
+#build-backend = "flit_core.buildapi"
+
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shed"
+version = "1.0.0"
+description = "vcs"
+requires-python = ">=3.11"
+dependencies = [
+    "click>=8.1",
+]
+
+[tool.setuptools]
+packages = ["source"]
+
+[project.scripts]
+shed-create = "source.shed:create_repository"
+shed-add = "source.shed:add_file"
+shed-build = "source.shed:build"
+shed-status = "source.shed:show_status"
+shed-delta = "source.shed:show_difference"
+shed-2-git = "source.shed:turn_into_git_repo"
+

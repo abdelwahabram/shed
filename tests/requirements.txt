@@ -1,0 +1,9 @@
+click==8.1.7
+freezegun==1.5.1
+iniconfig==2.0.0
+packaging==24.0
+pluggy==1.5.0
+pytest==8.2.2
+python-dateutil==2.9.0.post0
+-e git+ssh://git@github.com/abdelwahabram/shed.git@10d12b5ee4781b1fbeec31e3e7e56c655e6d32dd#egg=shed
+six==1.16.0

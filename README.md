@@ -9,23 +9,33 @@
 - [Screenshots](#screenshots)
 
 2.[Prerequisites](#prerequisites)
+
 3.[Install](#install)
+
 4.[Usage](#usage)
+
 5.[License](#license)
+
 6.[Contribution-guide](#contribution-guide)
+
 7.[Contact-info](#contact)
 
 ### About:
 
 #### Name origin:
 Since this is more like a pythonic version of git, and Python is a family of snakes, the project is named after a biological process that happens in snakes called 'ecdysis' where the snake sheds its skin, to evolve and get rid of the parasites stuck to it comparing it with a developer extending his code and getting rid of the bugs.
+
 #### Technologies:
 
  - Python
  - Click
+
 #### Demo
 - coming soon
+
 #### Screenshots
+- coming soon
+
 ### Prerequisites:
 - Python 3.11
 
@@ -33,6 +43,7 @@ Since this is more like a pythonic version of git, and Python is a family of sna
 1. clone this repo
 2. navigate to the repo directory
 3. run `pip3 install -e .`
+
 ### Usage
 1. `shed-create`: this command will create a shed repository
 2. `shed-add [file/files]`: this command will add the specified file/s to be built

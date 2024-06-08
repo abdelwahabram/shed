@@ -2,17 +2,18 @@
  - Another version control system
 
 ### Table of contents:
-[About](#about)
+1.[About](#about)
 - [Name origin](#name-origin)
 - [Technologies](#technologies)
 - [Demo](#demo)
 - [Screenshots](#screenshots)
-[Prerequisites](#prerequisites)
-[Install](#install)
-[Usage](#usage)
-[License](#license)
-[Contribution-guide](#contribution-guide)
-[Contact-info](#contact)
+
+2.[Prerequisites](#prerequisites)
+3.[Install](#install)
+4.[Usage](#usage)
+5.[License](#license)
+6.[Contribution-guide](#contribution-guide)
+7.[Contact-info](#contact)
 
 ### About:
 

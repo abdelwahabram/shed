@@ -31,7 +31,7 @@ Since this is more like a pythonic version of git, and Python is a family of sna
  - Click
 
 #### Demo
-- coming soon
+[![Shed demo](https://img.youtube.com/vi/VIDEOklMiy9Xq-hw_ID/0.jpg)](https://www.youtube.com/watch?v=klMiy9Xq-hw)
 
 #### Screenshots
 - coming soon
